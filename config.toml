@@ -92,17 +92,11 @@ issueTerm = "pathname" # pathname / url / title / og:title / <string>
 label = ""
 theme = "github-light"
 
-[params.comments.utterances.github]
-username = "MunifTanjim"
-repository = "minimo"
+
 
 [params.search]
 client = "fuse" # algolia / fuse / lunr
 
-[params.search.algolia]
-appId = ""
-indexName = ""
-searchApiKey = ""
 
 [taxonomies]
 author = "authors"
@@ -122,10 +116,5 @@ url = "https://github.com/CharlyReux/CharlyReux.github.io"
 [blackfriday]
 hrefTargetBlank = true
 
-[languages]
-# edit this block for your own language
-[languages.en]
-lang = "en"
-languageName = "English"
-weight = 1
+
 
