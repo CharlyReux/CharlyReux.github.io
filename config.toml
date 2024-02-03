@@ -82,7 +82,7 @@ dataAttrs = "" # "data-isso='https://isso.example.com' data-isso-require-author=
 enable = true
 apiEndpoint = "https://api.staticman.net/v2/entry"
 maxDepth = 2
-username = "CharlyReux"
+username = "CharlyReux" 
 repository = "charlyreux.github.io"
 
 # Utterances: https://utteranc.es
