@@ -1,0 +1,29 @@
+#Widget
+[about]
+title = ""
+description = ""
+logo = "assets/images/reux_charly.jpg"
+
+[breadcrumbs]
+separator = "/"
+excludeParents = ["page"]
+
+[recent_posts]
+title = ""
+length = 5
+excludeTypes = ["page"]
+
+[search]
+title = ""
+
+[sidebar_menu]
+title = ""
+mirror = ""
+
+[social_menu]
+title = ""
+platforms = ["github","instagram","email","linkedin","google_scholar"]
+
+[taxonomy_cloud]
+title = ""
+taxonomy = "tags"
