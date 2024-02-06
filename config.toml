@@ -24,7 +24,7 @@ enableEmoji = true
 defaultContentLanguage = "en"
 
 [params.info]
-description = "Research Engineer - INRIA"
+description = "Research Engineer - INRIA Rennes"
 title404 = "This page does not exist!"
 
 [params.assets]
@@ -49,7 +49,7 @@ hideEntryMeta = ["page"] # boolean / array of sections
 showReadingTime = true
 showLastmod = true
 taxonomyCloudShuffle = true
-accentColor = "#394361"
+accentColor = "#91b2c1"
 hideMainMenu = false
 
 [params.sidebar]
@@ -90,7 +90,7 @@ repository = "charlyreux.github.io"
 enable = false
 issueTerm = "pathname" # pathname / url / title / og:title / <string>
 label = ""
-theme = "github-light"
+theme = "github-dark"
 
 
 
@@ -112,6 +112,8 @@ name = "Repository"
 weight = -10
 identifier = "repository"
 url = "https://github.com/CharlyReux/CharlyReux.github.io"
+
+
 
 [blackfriday]
 hrefTargetBlank = true
