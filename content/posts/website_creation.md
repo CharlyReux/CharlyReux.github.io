@@ -5,11 +5,11 @@ draft : true
 
 authors: ["charlyReux"]
 categories:
-  - random
+  - projects
 tags:
   - website
+  - dev
 slug: making-a-website
-toc: true
+#toc: true
 ---
 
-## test
