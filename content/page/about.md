@@ -9,6 +9,8 @@ weight: -230
 ---
 ## A little about me
 
+***Note: this website is a work in progress, It is going to be updated in the near future***
+
 
 I am currently an engineer in the INRIA laboratory of Rennes in the [DiverSE team](https://www.diverse-team.fr/).
 
