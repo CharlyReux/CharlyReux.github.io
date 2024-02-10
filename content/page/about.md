@@ -1,7 +1,7 @@
 ---
 date: 2017-09-28T08:00:00+06:00
 title: Myself
-draft : true
+draft : false
 authors: ["CharlyReux"]
 slug: myself
 menu: main
@@ -9,19 +9,23 @@ weight: -230
 ---
 ## A little about me
 
-***Note: this website is a work in progress, It is going to be updated in the near future***
-
-
 I am currently an engineer in the INRIA laboratory of Rennes in the [DiverSE team](https://www.diverse-team.fr/).
 
 I work on two subjects at the moment:
 - I am helping on the creation of a thesis subject related to openAPI about facilitating the co-evolution between the Requirements, the Code, and the Documentation.
 - And I am also working on different subjects in relation to the [Software Heritage initiative](https://www.softwareheritage.org/).
 
-Even tho I am an engineer, I hope to be starting a Phd in the Diverse Team in less than a year.
+*Even tho I am an engineer, I hope to be starting a Phd in less than a year.*
 
 ## My Studies
 
-- Engineering Diploma: Software Engineering, ESIR school, Rennes; attained top class position.
-- Bachelor's Degree: Computer science, Université de Rennes 1 / ESIR School
-- High school diploma in Engineering Sciences.
+- **Engineering Diploma**: Software Engineering, ESIR school, Rennes; attained top class position.
+- **Bachelor's Degree**: Computer science, Université de Rennes 1 / ESIR School
+- **High school diploma**: Engineering Sciences.
+
+## Areas of Interest
+
+My main area of interest is of course *Software Engineering*, I am not focusing on any precise subject at the moment and I am still exploring the possibility that this field offers.
+My attention is however drawn to cutting edge technologies and advancements, as well as new trends that change the way we work. Basically, how things evolve will determine what I will work on in the future.
+
+Other than Software Engineering, I spend a lot of my spare time climbing (as you can see in the profile picture), as well as learning mandarin on my own. When I can, I like to read about philosophy, though I can never find enough time.

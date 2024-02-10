@@ -5,6 +5,10 @@ menu:
   - sidebar
 weight: -270
 ---
+
+***Note: this website is a work in progress, It is going to be updated in the near future***
+
+
 >**Hi! My name is charly, I am a software engineer in the INRIA laboratory in Rennes. I am passionated
 by programming and engineering in general. I love working on hard and complex projects and most of all, I love
 creating and exploring new ideas and new concepts.**
