@@ -11,12 +11,11 @@ weight: -230
 
 I am currently an engineer in the INRIA laboratory of Rennes in the [DiverSE team](https://www.diverse-team.fr/).
 
-I work on two subjects at the moment:
-- I am working on a subject related to OpenAPI. 
-- And I am also working on different subjects related to the [Software Heritage initiative](https://www.softwareheritage.org/), and more precisely about [Enhancing Cybersecurity](https://www.softwareheritage.org/2023/04/07/enhancing-cybersecurity-through-swh/) through Software Heritage.
+At the moment, I am mainly working in relation to an initiative called [Software Heritage](https://www.softwareheritage.org/), and more precisely about [Enhancing Cybersecurity](https://www.softwareheritage.org/2023/04/07/enhancing-cybersecurity-through-swh/) through Software Heritage. Our current objective is to study the propagation of vulnerabilities among repositories and more precisely forks.
 
+In parallel to that, I am reading and developping new skills in relation to the use of Large Language models for Software Engineering. I am really intested in everything that is possible to achieve with the new capabilities that those LLMs bring to the table.
 
-*Even tho I am an engineer, I hope to be starting a Phd in less than a year.*
+*Even tho I am an engineer, I hope to be starting a Phd in less than a year*, and as you can guess, the subject of that Phd will be related to LLMs. I am really looking forward to start to work on that subject.
 
 ## My Studies
 
