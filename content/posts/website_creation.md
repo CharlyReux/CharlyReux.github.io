@@ -1,7 +1,7 @@
 ---
 title : 'Making my website'
 date : 2024-02-03T20:01:01+01:00
-draft : true
+draft : false
 authors: ["charlyReux"]
 categories:
   - projects
@@ -11,8 +11,12 @@ tags:
 slug: making-a-website
 #toc: true
 ---
+
+![](/image/hugo.png)
+
 I had already made websites before, whether it was for school projects, internships or just for myself. 
-I actually made 2 different portfolio websites before this one, both in vanilla JS, which I both hosted on a server that I had. But those website became quickly wuite awful to maintain so I was not updating them and they became quckly outdated.
+I actually made 2 different portfolio websites before this one, both in vanilla JS, which I hosted on a server that I had. But those website became quickly quite awful to maintain so I was not updating them and they became quickly outdated.
 
 This time I wanted something more stable, so I decided to use Hugo and to host it via github.io. And so far, this solution appears to be ubiquitous.
 
+Hugo allow me to blog as well, and I am planning to post whenever I find something interesting to add in this website, possibly about software related things, but probably about any topic that interest me.
