@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Home on Charly Reux</title>
+    <link>http://localhost:1313/</link>
+    <description>Recent content in Home on Charly Reux</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sat, 03 Feb 2024 20:01:01 +0100</lastBuildDate>
+    <atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Myself</title>
+      <link>http://localhost:1313/myself/</link>
+      <pubDate>Thu, 28 Sep 2017 08:00:00 +0600</pubDate>
+      <guid>http://localhost:1313/myself/</guid>
+      <description>A little about me I am currently an engineer in the INRIA laboratory of Rennes in the DiverSE team.&#xA;I work on two subjects at the moment:&#xA;I am working on a subject related to OpenAPI. And I am also working on different subjects related to the Software Heritage initiative, and more precisely about Enhancing Cybersecurity through Software Heritage. Even tho I am an engineer, I hope to be starting a Phd in less than a year.</description>
+    </item>
+    <item>
+      <title>Making my website</title>
+      <link>http://localhost:1313/posts/making-a-website/</link>
+      <pubDate>Sat, 03 Feb 2024 20:01:01 +0100</pubDate>
+      <guid>http://localhost:1313/posts/making-a-website/</guid>
+      <description>I had already made websites before, whether it was for school projects, internships or just for myself. I actually made 2 different portfolio websites before this one, both in vanilla JS, which I both hosted on a server that I had. But those website became quickly quite awful to maintain so I was not updating them and they became quickly outdated.&#xA;This time I wanted something more stable, so I decided to use Hugo and to host it via github.</description>
+    </item>
+    <item>
+      <title></title>
+      <link>http://localhost:1313/search/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/search/</guid>
+      <description></description>
+    </item>
+  </channel>
+</rss>

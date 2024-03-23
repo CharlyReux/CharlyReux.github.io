@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Dev on Charly Reux</title>
+    <link>http://localhost:1313/tags/dev/</link>
+    <description>Recent content in Dev on Charly Reux</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sat, 03 Feb 2024 20:01:01 +0100</lastBuildDate>
+    <atom:link href="http://localhost:1313/tags/dev/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Making my website</title>
+      <link>http://localhost:1313/posts/making-a-website/</link>
+      <pubDate>Sat, 03 Feb 2024 20:01:01 +0100</pubDate>
+      <guid>http://localhost:1313/posts/making-a-website/</guid>
+      <description>I had already made websites before, whether it was for school projects, internships or just for myself. I actually made 2 different portfolio websites before this one, both in vanilla JS, which I both hosted on a server that I had. But those website became quickly quite awful to maintain so I was not updating them and they became quickly outdated.&#xA;This time I wanted something more stable, so I decided to use Hugo and to host it via github.</description>
+    </item>
+  </channel>
+</rss>
