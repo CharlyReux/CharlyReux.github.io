@@ -2,7 +2,7 @@
 title : 'Making my website'
 date : 2024-02-03T20:01:01+01:00
 draft : false
-authors: ["charlyReux"]
+authors: ["charlyreux"]
 categories:
   - projects
 tags:
