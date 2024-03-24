@@ -2,25 +2,30 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Pages on Charly Reux</title>
-    <link>http://localhost:1313/page/</link>
+    <link>https://charlyreux.github.io/page/</link>
     <description>Recent content in Pages on Charly Reux</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Thu, 28 Sep 2017 08:00:00 +0600</lastBuildDate>
-    <atom:link href="http://localhost:1313/page/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 28 Sep 2017 08:00:00 +0600</lastBuildDate><atom:link href="https://charlyreux.github.io/page/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Myself</title>
-      <link>http://localhost:1313/myself/</link>
+      <link>https://charlyreux.github.io/myself/</link>
       <pubDate>Thu, 28 Sep 2017 08:00:00 +0600</pubDate>
-      <guid>http://localhost:1313/myself/</guid>
-      <description>A little about me I am currently an engineer in the INRIA laboratory of Rennes in the DiverSE team.&#xA;I work on two subjects at the moment:&#xA;I am working on a subject related to OpenAPI. And I am also working on different subjects related to the Software Heritage initiative, and more precisely about Enhancing Cybersecurity through Software Heritage. Even tho I am an engineer, I hope to be starting a Phd in less than a year.</description>
+      
+      <guid>https://charlyreux.github.io/myself/</guid>
+      <description>A little about me I am currently an engineer in the INRIA laboratory of Rennes in the DiverSE team.
+At the moment, I am mainly working in relation to an initiative called Software Heritage, and more precisely about Enhancing Cybersecurity through Software Heritage. Our current objective is to study the propagation of vulnerabilities among repositories and more precisely forks.
+In parallel to that, I am reading and developping new skills in relation to the use of Large Language models for Software Engineering.</description>
     </item>
+    
     <item>
       <title></title>
-      <link>http://localhost:1313/search/</link>
+      <link>https://charlyreux.github.io/search/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      <guid>http://localhost:1313/search/</guid>
+      
+      <guid>https://charlyreux.github.io/search/</guid>
       <description></description>
     </item>
+    
   </channel>
 </rss>

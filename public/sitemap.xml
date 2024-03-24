@@ -2,44 +2,44 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>http://localhost:1313/</loc>
+    <loc>https://charlyreux.github.io/</loc>
     <lastmod>2024-02-03T20:01:01+01:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/posts/</loc>
+    <loc>https://charlyreux.github.io/posts/</loc>
     <lastmod>2024-02-03T20:01:01+01:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/myself/</loc>
+    <loc>https://charlyreux.github.io/myself/</loc>
     <lastmod>2017-09-28T08:00:00+06:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/authors/</loc>
+    <loc>https://charlyreux.github.io/authors/</loc>
     <lastmod>2024-02-03T20:01:01+01:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/categories/</loc>
+    <loc>https://charlyreux.github.io/categories/</loc>
     <lastmod>2024-02-03T20:01:01+01:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/authors/charlyreux/</loc>
+    <loc>https://charlyreux.github.io/authors/charlyreux/</loc>
     <lastmod>2024-02-03T20:01:01+01:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/dev/</loc>
+    <loc>https://charlyreux.github.io/tags/dev/</loc>
     <lastmod>2024-02-03T20:01:01+01:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/posts/making-a-website/</loc>
+    <loc>https://charlyreux.github.io/posts/making-a-website/</loc>
     <lastmod>2024-02-03T20:01:01+01:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/categories/projects/</loc>
+    <loc>https://charlyreux.github.io/categories/projects/</loc>
     <lastmod>2024-02-03T20:01:01+01:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/</loc>
+    <loc>https://charlyreux.github.io/tags/</loc>
     <lastmod>2024-02-03T20:01:01+01:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/tags/website/</loc>
+    <loc>https://charlyreux.github.io/tags/website/</loc>
     <lastmod>2024-02-03T20:01:01+01:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/page/</loc>
+    <loc>https://charlyreux.github.io/page/</loc>
     <lastmod>2017-09-28T08:00:00+06:00</lastmod>
   </url><url>
-    <loc>http://localhost:1313/search/</loc>
+    <loc>https://charlyreux.github.io/search/</loc>
   </url><url>
-    <loc>http://localhost:1313/series/</loc>
+    <loc>https://charlyreux.github.io/series/</loc>
   </url>
 </urlset>

@@ -2,7 +2,7 @@
 date: 2017-09-28T08:00:00+06:00
 title: Myself
 draft : false
-authors: ["CharlyReux"]
+authors: ["charlyreux"]
 slug: myself
 menu: main
 weight: -230
