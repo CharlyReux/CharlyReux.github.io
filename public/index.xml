@@ -15,7 +15,7 @@
       <guid>https://charlyreux.github.io/myself/</guid>
       <description>A little about me I am currently an engineer in the INRIA laboratory of Rennes in the DiverSE team.
 At the moment, I am mainly working in relation to an initiative called Software Heritage, and more precisely about Enhancing Cybersecurity through Software Heritage. Our current objective is to study the propagation of vulnerabilities among repositories and more precisely forks.
-In parallel to that, I am reading and developping new skills in relation to the use of Large Language models for Software Engineering.</description>
+In parallel to that, I am reading and developing new skills in relation to the use of Large Language models for Software Engineering.</description>
     </item>
     
     <item>
@@ -24,7 +24,7 @@ In parallel to that, I am reading and developping new skills in relation to the 
       <pubDate>Sat, 03 Feb 2024 20:01:01 +0100</pubDate>
       
       <guid>https://charlyreux.github.io/posts/making-a-website/</guid>
-      <description>I had already made websites before, whether it was for school projects, internships or just for myself. I actually made 2 different portfolio websites before this one, both in vanilla JS, which I hosted on a server that I had. But those website became quickly quite awful to maintain so I was not updating them and they became quickly outdated.
+      <description>I had already made websites before, whether it was for school projects, internships or just for myself. I actually made 2 different portfolio websites before this one, both in vanilla JS, which I hosted on a server that I had. But those websites became quickly quite awful to maintain, so I was not updating them, and they became quickly outdated.
 This time I wanted something more stable, so I decided to use Hugo and to host it via github.</description>
     </item>
     
