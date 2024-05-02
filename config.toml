@@ -67,7 +67,7 @@ email = "charly.reux@inria.fr"
 github = "CharlyReux"
 instagram = "charl_reux"
 linkedin = "charly-reux"
-google_scholar = "TODO"
+#google_scholar = "TODO"
 
 [params.comments]
 enable = false
