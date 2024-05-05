@@ -10,14 +10,13 @@ tags:
   - software heritage
   - dev
 slug: provenance-from-graph
-toc: true
 ---
 
-In the context of the work I do in relation to the software heritage initiative, I had the opportunity to work on the computation of the provenance of commits from a graph representation of all the source code available in the world.
+>In the context of the work in relation to the software heritage initiative, I had the opportunity to work on the computation of the provenance of commits from a graph representation of all the source code available in the world.
 
 
 ## Context
-To give a bit more context, Software heritage is an initiative with the purpose of saving all the source code ever created, the architecture that is implemented behind it is quite massive, and the amount of data is pretty huge.
+To give some context, Software heritage is an initiative with the purpose of saving all the source code ever created, the architecture that is implemented behind it is quite massive, and the amount of data is pretty huge.
 
 I won't explain much of it in this post, but basically, there are currently 18T source files, 4T commits, and 300M projects that are stored in the archive (and they are all deduplicated). You can see all of that for yourself [here](https://archive.softwareheritage.org/).
 
@@ -58,10 +57,32 @@ You can take a few seconds to try to find the possible methods to achieve that g
 
 ## How I did it
 ### First Implementation
-The first intuition was to start from the origins (the cloud in the diagram) and to go down the commits and tag all of them along the way.  
+The first intuition was to start from the origins (the clouds in the diagram) and to go down the commits and tag all of them along the way.  
 > Easy right?
 
 Indeed, pretty easy to implement, and quite a simple approach. However, when dealing with an amount of data that big, this did not scale at all.  
-So I added parallelism, by having a thread starting on each origin and tagging all the commits along the way (ensuring of course that two thread would not r the value written in the map), but yet again, it did not scale at all.
+So I added parallelism, by having a thread starting on each origin and tagging all the commits along the way (ensuring of course concurrent access to the map), but yet again, it did not scale at all.
 
 So we had to come up with something more clever.
+
+### Topological sort
+
+For another algorithm, we had access to the topological sort of the graph, which is a sort of the nodes in which that a node cannot appear before any of its parents.  
+>Here is a simple example:  
+>![example_fork_diagram](/assets/images/provenance_from_graph/toposort.png)  
+>Source : https://cp-algorithms.com/graph/topological-sort.html
+
+And we found an idea on how to use it to compute the provenance, and in a much more efficient manner!
+##### first step
+The first step of the algorithm we devised was to tag the revisions(i.e. commits) that had a direct relation to a snapshot.  No usage of the topological sort for now, but it will come in handy later.  
+
+For example, with the example above, we would have done this:   
+TODO: insert graph
+
+##### second step 
+
+Our idea was that we could use the sort to traverse the graph in a single pass, going from the parents to the children, or in other terms going from the latest revisions(i.e. commit) to the earliest ones.  
+While traversing the graph, we would check the values associated with the parents in the map, and "transmit" them to the children.  
+Let me give you an overview of how it would work on the example graph.
+
+TODO add example graph
