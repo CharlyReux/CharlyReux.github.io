@@ -40,7 +40,7 @@ As I said, my goal was to find the provenance of all the commits in that graph (
 
 *Why a list of urls?*, you might say. Well, a graph representation speaks louder than a thousand word.
 
-![example_fork_diagram](/assets/images/provenance_from_graph/Commit_graph.drawio.svg)
+![example_fork_diagram](/assets/images/provenance_from_graph/full-graph.png)
 
 Let's say we have this example where two repositories, the Linux kernel, and a fork of the Linux kernel. The commit A, in reality, belongs to the original Linux repository. However, there is no way for us with that architecture, to know whether that commit is from Linux or the fork because in practice this commit is in both repository.
 
@@ -73,16 +73,21 @@ For another algorithm, we had access to the topological sort of the graph, which
 >Source : https://cp-algorithms.com/graph/topological-sort.html
 
 And we found an idea on how to use it to compute the provenance, and in a much more efficient manner!
-##### first step
+##### First step
 The first step of the algorithm we devised was to tag the revisions(i.e. commits) that had a direct relation to a snapshot.  No usage of the topological sort for now, but it will come in handy later.  
 
 For example, with the example above, we would have done this:   
-TODO: insert graph
+![algorythm_1step](/assets/images/provenance_from_graph/algo-1.png)
 
-##### second step 
+##### Second step 
 
 Our idea was that we could use the sort to traverse the graph in a single pass, going from the parents to the children, or in other terms going from the latest revisions(i.e. commit) to the earliest ones.  
 While traversing the graph, we would check the values associated with the parents in the map, and "transmit" them to the children.  
-Let me give you an overview of how it would work on the example graph.
 
-TODO add example graph
+Hopefully this wonderful GIF will make it clearer.  
+![example_fork_diagram](/assets/images/provenance_from_graph/algo-2.gif)
+
+And there it is, the full annotated graph, now that I look at it again, the algorythm seem simple. But **believe me**, in practice, on probably one of the biggest graph ever created (that make sense), It was not.
+
+I might make another post later on the reason why I needed to make that algorithm in the first place.  
+Anyway, I hope you enjoyed reading this. This is my first "real" post, I hope to be making more later, this was a fun "sub"-project so I thought I would share.
