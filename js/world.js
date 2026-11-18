@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { makeCity } from './city.js';
 import { woodMaps, plasticMaps, brushedMaps, keycapMaps, legendTexture } from './textures.js';
 
@@ -885,6 +886,79 @@ function loadProp(url, { scale, longest, rotation = [0, 0, 0] } = {}) {
   return g;
 }
 
+/** Black webbing hang loop on top of the bag (screen units; the scan's own was too ragged). */
+const HANG_LOOP = { drop: 0.12, top: 0.03, half: 0.048, sink: 0.12, thick: 0.006, wide: 0.045 };
+
+/**
+ * The hang loop, in the bag holder's space: its top is the origin (the hook's
+ * catch point) and its feet go into the bag's top, `bagZ` out from there.
+ */
+function makeHangLoop(bagZ) {
+  const { drop, top, half, sink, thick, wide } = HANG_LOOP;
+  const pts = [new THREE.Vector3(-half, -drop - sink, 0), new THREE.Vector3(-half * 0.75, -drop * 0.55, 0)];
+  for (let i = 0; i <= 8; i++) {
+    const a = Math.PI - (i / 8) * Math.PI;
+    pts.push(new THREE.Vector3(Math.cos(a) * top, -top + Math.sin(a) * top, 0));
+  }
+  pts.push(new THREE.Vector3(half * 0.75, -drop * 0.55, 0), new THREE.Vector3(half, -drop - sink, 0),
+    new THREE.Vector3(0, -drop - sink * 1.5, 0)); // closes inside the bag
+  const geo = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, true), 64, thick, 8, true);
+  geo.scale(1, 1, wide / thick); // flat strap: wide across the hook, thin along it
+  const pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) { // lean the feet out to the bag if it sits off the wall
+    pos.setZ(i, pos.getZ(i) + bagZ * THREE.MathUtils.clamp(-pos.getY(i) / drop, 0, 1));
+  }
+  geo.computeVertexNormals();
+  const loop = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: 0x121212, roughness: 0.85 }));
+  loop.castShadow = true;
+  return loop;
+}
+
+/**
+ * The user's climbing bag (a RealityCapture scan in metres, simplified to
+ * ~80k triangles with meshoptimizer, ragged top cut off), set up to hang
+ * from a black webbing loop: the group's origin is the top of the loop, so
+ * placing the group at a hook's catch point hangs it there. `wallZ` (in the
+ * parent's space, given with the catch point) keeps the bag from going into
+ * the wall.
+ */
+function makeHangingBag(catchPoint, wallZ) {
+  const g = new THREE.Group();
+  g.position.copy(catchPoint);
+  new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).load("assets/models/props/climbing-bag.glb", ({ scene }) => {
+    scene.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; } });
+    scene.scale.setScalar(3); // metres -> screen units
+    scene.rotation.y = -Math.PI/2; // thin side against the wall
+    const holder = new THREE.Group();
+    holder.add(scene);
+    holder.updateMatrixWorld(true);
+
+    // Strap top: centroid of the highest ~2% of vertices (in holder space).
+    const pts = [];
+    const v = new THREE.Vector3();
+    scene.traverse((o) => {
+      if (!o.isMesh) return;
+      const pos = o.geometry.attributes.position;
+      for (let i = 0; i < pos.count; i += 2) pts.push(v.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld).clone());
+    });
+    pts.sort((a, b) => b.y - a.y);
+    const top = pts.slice(0, Math.max(10, Math.floor(pts.length * 0.02)));
+    const strap = top.reduce((m, p) => m.add(p), new THREE.Vector3()).divideScalar(top.length);
+    scene.position.sub(strap);
+    scene.position.y -= HANG_LOOP.drop; // the loop goes between the hook and the bag
+
+    // Don't let the back of the bag sink into the wall.
+    holder.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(holder, true);
+    const back = catchPoint.z + box.min.z;
+    const push = Math.max(0, wallZ + 0.01 - back);
+    scene.position.z += push;
+    holder.add(makeHangLoop(push));
+    g.add(holder);
+  });
+  return g;
+}
+
 // ---------- Gravity hammer ----------
 
 // Credits: "Halo weapons" by That one larry, CC BY 4.0
@@ -1049,8 +1123,14 @@ export function buildWorld(rig) {
   laptop.outer.rotation.y = -0.12; // turned a little towards the room
 
   const hook = makeWallHook();
-  hook.position.set(3.05, -0.95, WALL_Z);
+  hook.position.set(3.5, -0.95, WALL_Z);
   rig.add(hook);
+
+  // Climbing bag hanging from the hook (strap in the hook's curl).
+  const HOOK_CATCH = new THREE.Vector3(0, -0.045, 0.13); // bottom of the curl, hook space
+  const bagCatch = hook.position.clone().add(HOOK_CATCH);
+  const bag = hoverable("bag", makeHangingBag(new THREE.Vector3(), WALL_Z - bagCatch.z), 0.06);
+  bag.outer.position.copy(bagCatch);
 
   const hammer = hoverable("hammer", makeHammer(), 0.18);
   const lean = 0.14; // radians from vertical
@@ -1121,7 +1201,7 @@ export function buildWorld(rig) {
     key,
     glow,
     // Groups positioned at each screen centre, facing +z. Screens attach here.
-    hoverables: [car, hammer, poster, dvd, trainer, laptop, drill],
+    hoverables: [car, hammer, poster, dvd, trainer, laptop, drill, bag],
     anchors: { main, left: sides[0].monitor, right: sides[1].monitor },
   };
 }

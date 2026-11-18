@@ -104,6 +104,8 @@ function sidePose(name, aspect) {
   pose.pos.copy(pose.target).addScaledVector(_normal, dist);
 }
 
+let roomPan = 0; // sideways pan for full tilt in the room view (portrait only, set in layout)
+
 function layout() {
   const w = window.innerWidth;
   const h = window.innerHeight;
@@ -130,6 +132,8 @@ function layout() {
   // Step back far enough to see all three screens (within reason on portrait).
   const needed = (totalWidth / 2 + 2) / (TAN * aspect);
   poses.room.pos.set(0.45, 0.55, THREE.MathUtils.clamp(needed, FIT_DIST * 3, FIT_DIST * 6));
+  // Portrait phones can't fit the room: tilting left/right pans over what's cut off.
+  roomPan = aspect < 1 ? Math.max(0, totalWidth / 2 + 2 - poses.room.pos.z * TAN * aspect) : 0;
   sidePose('left', aspect);
   sidePose('right', aspect);
 
@@ -236,8 +240,41 @@ window.addEventListener('keydown', (e) => {
 const mouse = new THREE.Vector2();
 const parallax = new THREE.Vector2();
 window.addEventListener('pointermove', (e) => {
+  if (e.pointerType === 'touch') return; // phones use the tilt below instead
   mouse.set((e.clientX / window.innerWidth) * 2 - 1, (e.clientY / window.innerHeight) * 2 - 1);
 });
+
+// Phones: tilting the phone moves the view like the mouse does. The rest
+// position slowly follows how the phone is held, so only tilts count.
+const TILT_RANGE = 18; // degrees of tilt for the full parallax
+const TILT_FOLLOW = 0.004; // per reading (~60/s): rest position catches up in a few seconds
+let tiltRest = null;
+let parallaxGain = 1; // the phone camera sits much further back, so tilt moves it more
+function onTilt(e) {
+  if (e.beta === null || e.gamma === null) return;
+  const angle = screen.orientation?.angle ?? window.orientation ?? 0;
+  // Tilt in screen axes: x = right edge down, y = top edge towards the user.
+  let x = e.gamma, y = e.beta;
+  if (angle === 90) [x, y] = [e.beta, -e.gamma];
+  else if (angle === -90 || angle === 270) [x, y] = [-e.beta, e.gamma];
+  if (!tiltRest) { tiltRest = { x, y }; parallaxGain = 4; }
+  tiltRest.x += (x - tiltRest.x) * TILT_FOLLOW;
+  tiltRest.y += (y - tiltRest.y) * TILT_FOLLOW;
+  const clamp = (v) => THREE.MathUtils.clamp(v / TILT_RANGE, -1, 1);
+  mouse.set(clamp(x - tiltRest.x), clamp(y - tiltRest.y));
+}
+if (window.matchMedia('(pointer: coarse)').matches && 'DeviceOrientationEvent' in window) {
+  window.addEventListener('deviceorientation', onTilt);
+  if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+    // iOS only sends tilt events once asked, and only from a tap.
+    const ask = () => {
+      DeviceOrientationEvent.requestPermission()
+        .then((state) => { if (state === 'granted') window.removeEventListener('click', ask); })
+        .catch(() => {});
+    };
+    window.addEventListener('click', ask);
+  }
+}
 
 const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 const camPos = new THREE.Vector3();
@@ -267,13 +304,17 @@ function updateCamera(dt) {
   const weight = (view === 'room' ? k : 0) + (fromView === 'room' && view !== 'room' ? 1 - k : 0);
   parallax.lerp(mouse, Math.min(1, dt * 4));
   camPos.copy(current.pos);
-  camPos.x += parallax.x * 0.3 * weight;
-  camPos.y -= parallax.y * 0.15 * weight;
+  camPos.x += parallax.x * 0.3 * parallaxGain * weight;
+  camPos.y -= parallax.y * 0.15 * parallaxGain * weight;
+  const pan = parallaxGain > 1 ? parallax.x * roomPan * weight : 0; // tilt only (phones)
+  camPos.x += pan;
 
   // Screen units -> world px.
   const h = rig.scale.x;
   camera.position.copy(camPos).multiplyScalar(h);
-  camera.lookAt(camTarget.copy(current.target).multiplyScalar(h));
+  camTarget.copy(current.target);
+  camTarget.x += pan;
+  camera.lookAt(camTarget.multiplyScalar(h));
 }
 
 // ---------- Hover focus ----------
@@ -296,10 +337,36 @@ let pointerActive = false;
 let hovered = null;
 
 window.addEventListener('pointermove', (e) => {
+  if (e.pointerType === 'touch') return;
+  usingTouch = false;
   pointer.set((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
   pointerActive = true;
 });
-document.documentElement.addEventListener('pointerleave', () => { pointerActive = false; });
+document.documentElement.addEventListener('pointerleave', (e) => {
+  if (e.pointerType !== 'touch') pointerActive = false;
+});
+
+// Touch: tapping a prop shows it (lift, label, blur) until the next tap
+// elsewhere. That dismissing tap does nothing else, so it can't open a screen.
+let usingTouch = false;
+let tapped = null;
+let swallowClick = false;
+window.addEventListener('pointerdown', (e) => {
+  if (e.pointerType !== 'touch') return;
+  usingTouch = true;
+  if (view !== 'room' || moving) { tapped = null; return; }
+  pointer.set((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
+  pointerActive = true;
+  const hit = pickProp(null);
+  swallowClick = !!(hit || tapped);
+  tapped = hit && hit !== tapped ? hit : null;
+}, true);
+window.addEventListener('click', (e) => {
+  if (!swallowClick) return;
+  swallowClick = false;
+  e.stopPropagation();
+  e.preventDefault();
+}, true);
 
 function setHovered(prop) {
   if (prop === hovered) return;
@@ -318,7 +385,8 @@ function setHovered(prop) {
   document.body.classList.toggle('is-hovering', !!hovered);
 }
 
-function pickProp() {
+/** The prop under the pointer; `sticky` stays picked anywhere within its bounds. */
+function pickProp(sticky = hovered) {
   if (view !== 'room' || moving || !pointerActive) return null;
   raycaster.setFromCamera(pointer, camera);
   let best = null;
@@ -330,7 +398,7 @@ function pickProp() {
     if (!boxHit) continue;
     // Keep the current prop while the pointer stays within its bounds, so the
     // lift doesn't make it flicker; otherwise require a hit on the mesh itself.
-    const dist = p === hovered
+    const dist = p === sticky
       ? boxHit.distanceTo(raycaster.ray.origin)
       : raycaster.intersectObject(p.outer, true)[0]?.distance;
     if (dist !== undefined && dist < bestDist) { best = p; bestDist = dist; }
@@ -364,7 +432,12 @@ function placeLabel(prop) {
 const liftEase = (t) => 1 - Math.pow(1 - t, 3);
 
 function updateHover(dt) {
-  setHovered(pickProp());
+  if (usingTouch) {
+    if (view !== 'room' || moving) tapped = null;
+    setHovered(tapped);
+  } else {
+    setHovered(pickProp());
+  }
   for (const p of props) {
     p.t += ((p === hovered ? 1 : 0) - p.t) * Math.min(1, dt * 8);
     p.inner.position.copy(p.liftAxis).multiplyScalar(p.lift * liftEase(p.t));

@@ -93,11 +93,27 @@ function paperCard(p) {
   return li;
 }
 
+/** "Show more" on a card that was written into the HTML by the update script. */
+function wireCard(li) {
+  const more = li.querySelector('.paper__more');
+  more?.addEventListener('click', () => {
+    const open = li.classList.toggle('is-open');
+    more.textContent = open ? 'Show less' : 'Show more';
+  });
+}
+
 export async function initPapers() {
   const list = document.getElementById('papers');
   if (!list) return;
-  const papers = await fetch('data/papers.json').then((r) => r.json()).catch(() => []);
-  list.replaceChildren(...papers.map(paperCard));
+  // Cards are normally already in the HTML (scripts/update-papers.mjs writes
+  // them there for search engines); fall back to building them from the data.
+  const existing = list.querySelectorAll('.paper');
+  if (existing.length) {
+    existing.forEach(wireCard);
+  } else {
+    const papers = await fetch('data/papers.json').then((r) => r.json()).catch(() => []);
+    list.replaceChildren(...papers.map(paperCard));
+  }
   for (const card of list.querySelectorAll('.paper[data-pdf]')) {
     renderPreview(card).catch((err) => console.warn('Paper preview failed:', card.dataset.pdf, err));
   }
