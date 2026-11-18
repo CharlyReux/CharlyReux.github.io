@@ -4,6 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Charly Reux</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..700&display=swap" />
   <link rel="stylesheet" href="css/style.css" />
   <script type="importmap">
     {
@@ -15,10 +19,92 @@
   </script>
 </head>
 <body>
-  <canvas id="scene"></canvas>
-  <main class="overlay">
-    <h1>Charly Reux</h1>
-  </main>
+  <!-- WebGL world (room, monitor). Sits behind the page. -->
+  <div id="world"></div>
+
+  <!-- Screens. main.js mounts each one on a monitor in 3D. -->
+
+  <!-- Left monitor -->
+  <div id="screen-left" class="page page--clean" data-screen="left">
+    <div class="side">
+      <button class="back" type="button" data-back>← Back</button>
+      <h2>Some Personal Projects</h2>
+      <p class="side__lead">Some things I have tried and that are in progress</p>
+      <ul class="cards">
+        <li class="card">
+          <h3><a href="https://knowledge-map.fr/">Knowledge-map</a></h3>
+          <p>A way to get an overview of the entirety of human knowledge created by research.</p>
+        </li>
+        <li class="card">
+          <h3><a href="https://github.com/CharlyReux/Kalo">Kalo</a></h3>
+          <p>A modern modding workbench for Halo: Reach. I still like coding as a hobby, so I had Claude create a more modern language to mod the game.</p>
+        </li>
+        <li class="card">
+          <h3>Digital</h3>
+          <p>A 3D engine from scratch in Rust, with an embedded agent that interprets and creates your "digital" as you speak. Very much in progress.</p>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Right monitor: research and papers. -->
+  <div id="screen-right" class="page page--clean" data-screen="right">
+    <div class="side">
+      <button class="back" type="button" data-back>← Back</button>
+      <h2>My Research</h2>
+      <h3 class="section-title">Papers</h3>
+      <!-- Filled from data/papers.json by js/papers.js (kept up to date from HAL
+           by .github/workflows/update-papers.yml). -->
+      <ul class="papers" id="papers">
+      </ul>
+    </div>
+  </div>
+
+  <!-- Main monitor: the welcome page -->
+  <div id="page" class="page" data-screen="main">
+    <div class="page__inner">
+      <header class="hero">
+        <img class="hero__avatar" src="assets/avatar.jpg" alt="Charly Reux" width="160" height="160" />
+        <h1 class="hero__name">Charly Reux</h1>
+      </header>
+
+      <section class="intro">
+        <p>
+          I am a PhD student in Software Engineering, working in the DiverSE team at <a href="https://www.inria.fr/fr/centre-inria-universite-rennes">Inria Rennes</a>.
+        </p>
+        <p>
+          I work on AI for Software Engineering, more precisely on generation and verification of code-generated artefacts.
+          I first focused on modifying code that produces visuals from high-level descriptions using LLMs and Iterative Refinement, then shifted to Reproduction of Computational Research using coding agents. Always centering my research around the evaluation of these systems through visual verification.
+        </p>
+      </section>
+
+      <button id="more" class="btn" type="button">More about me</button>
+    </div>
+  </div>
+
+  <!-- Labels shown next to a prop when it's hovered in the room view. -->
+  <div class="hover-label" data-label="car">
+    <p>I might have played too much of this...</p>
+  </div>
+  <div class="hover-label" data-label="hammer">
+    <p>I wonder what this is doing here...</p>
+  </div>
+  <div class="hover-label" data-label="poster">
+    <p>From a good graphic novel</p>
+  </div>
+  <div class="hover-label" data-label="dvd">
+    <p>Too many good glitches in this game</p>
+  </div>
+  <div class="hover-label" data-label="laptop">
+    <p>Wait, <a href= "https://knowledge-map.fr/">knowledge-map</a> is running on this?</p>
+  </div>
+  <div class="hover-label" data-label="drill">
+    <p>It's called "route setting"</p>
+  </div>
+  <div class="hover-label" data-label="trainer">
+    <p>You gotta train these fingers</p>
+  </div>
+
   <script type="module" src="js/main.js"></script>
 </body>
 </html>

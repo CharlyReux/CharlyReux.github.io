@@ -1,36 +1,407 @@
 import * as THREE from 'three';
+import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
+import { buildWorld, SIDE_W } from './world.js';
+import { CITY_FOG } from './city.js';
+import { initPapers } from './papers.js';
 
-const canvas = document.getElementById('scene');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+/*
+ * Each monitor screen is a real DOM page rendered with CSS3DRenderer on top of
+ * the WebGL room. At rest the camera sits exactly where the main screen fills
+ * the viewport 1:1, so it looks like a normal page.
+ *
+ * Views:  main ──"More about me"──▶ room ──click a screen──▶ main | left | right
+ *         room ◀── Esc / Back / click outside ── left | right;  room ──Esc──▶ main
+ *
+ * Units: everything lives in `rig`, built in "screen units" (screen height = 1)
+ * and scaled by the viewport height in px, so CSS elements end up at scale 1
+ * in world space (crisp text) while geometry stays easy to reason about.
+ */
+
+const FOV = 40;
+const TAN = Math.tan(THREE.MathUtils.degToRad(FOV / 2));
+const FIT_DIST = 0.5 / TAN; // distance at which a 1-unit-tall screen fills the view
+const DURATION = 1.6; // seconds per camera move
+const SIDE_MARGIN = 1.06; // a sliver of bezel stays visible when zoomed on a side screen
+
+// ---------- Renderers ----------
+
+// Log depth: the scene spans a 1-unit screen up close to a city ~2000 units away.
+const gl = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: true });
+gl.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // capped: full 2x/3x costs a lot of GPU
+gl.shadowMap.enabled = true;
+gl.shadowMap.type = THREE.PCFSoftShadowMap;
+gl.outputColorSpace = THREE.SRGBColorSpace;
+document.getElementById('world').appendChild(gl.domElement);
+
+// Transparent renderer that draws only the hovered prop, sharp, above the
+// blurred main canvas (see "Hover focus" below).
+const focusGl = new THREE.WebGLRenderer({ antialias: true, alpha: true, logarithmicDepthBuffer: true });
+focusGl.setPixelRatio(gl.getPixelRatio());
+focusGl.outputColorSpace = THREE.SRGBColorSpace;
+focusGl.setClearColor(0x000000, 0);
+focusGl.domElement.id = 'focus';
+document.getElementById('world').after(focusGl.domElement);
+
+const css = new CSS3DRenderer();
+css.domElement.classList.add('css3d');
+document.body.appendChild(css.domElement);
+
+// ---------- Scene ----------
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
-camera.position.set(0, 0, 5);
+scene.background = new THREE.Color(CITY_FOG.color);
+// Exponential fog: negligible inside the room, swallows the city with distance.
+scene.fog = new THREE.FogExp2(CITY_FOG.color, 0);
 
-scene.add(new THREE.AmbientLight(0xffffff, 0.4));
-const light = new THREE.DirectionalLight(0xffffff, 1.2);
-light.position.set(3, 4, 5);
-scene.add(light);
+const camera = new THREE.PerspectiveCamera(FOV, 1, 1, 10);
+const rig = new THREE.Group();
+scene.add(rig);
 
-// Placeholder object — will be replaced with the real scene.
-const mesh = new THREE.Mesh(
-  new THREE.IcosahedronGeometry(1.2, 1),
-  new THREE.MeshStandardMaterial({ color: 0x6c8cff, flatShading: true })
-);
-scene.add(mesh);
+const world = buildWorld(rig);
 
-function resize() {
-  const { innerWidth: w, innerHeight: h } = window;
-  renderer.setSize(w, h, false);
-  camera.aspect = w / h;
-  camera.updateProjectionMatrix();
+// Mount each page on its monitor. The CSS layer is drawn above all WebGL, so
+// screens must never sit behind WebGL geometry from the camera's viewpoint.
+const screens = {};
+for (const el of document.querySelectorAll('[data-screen]')) {
+  const name = el.dataset.screen;
+  const object = new CSS3DObject(el);
+  object.position.z = name === 'main' ? 0 : 0.001;
+  world.anchors[name].add(object);
+
+  // Glass in front of the page: a faint glare and darker edges. Its own CSS3D
+  // object (not inside the scrolling page), and it ignores the pointer.
+  const glassEl = document.createElement("div");
+  glassEl.className = "glass";
+  const glass = new CSS3DObject(glassEl);
+  glassEl.style.pointerEvents = "none";
+  glass.position.z = object.position.z + 0.0005;
+  world.anchors[name].add(glass);
+
+  screens[name] = { el, object, glassEl, glass, anchor: world.anchors[name] };
 }
-window.addEventListener('resize', resize);
-resize();
 
-renderer.setAnimationLoop((t) => {
-  mesh.rotation.x = t * 0.0002;
-  mesh.rotation.y = t * 0.0003;
-  renderer.render(scene, camera);
+// ---------- Layout ----------
+
+const poses = {
+  main: { pos: new THREE.Vector3(0, 0, FIT_DIST), target: new THREE.Vector3() },
+  room: { pos: new THREE.Vector3(), target: new THREE.Vector3(0, 0.05, 0) },
+  left: { pos: new THREE.Vector3(), target: new THREE.Vector3() },
+  right: { pos: new THREE.Vector3(), target: new THREE.Vector3() },
+};
+
+const _q = new THREE.Quaternion();
+const _normal = new THREE.Vector3();
+
+/** Pose looking straight at a side screen, fitted to the viewport. */
+function sidePose(name, aspect) {
+  const { anchor } = screens[name];
+  const pose = poses[name];
+  const h = rig.scale.x;
+  anchor.getWorldPosition(pose.target).divideScalar(h);
+  anchor.getWorldQuaternion(_q);
+  _normal.set(0, 0, 1).applyQuaternion(_q);
+  const dist = Math.max(FIT_DIST, SIDE_W / 2 / (TAN * aspect)) * SIDE_MARGIN;
+  pose.pos.copy(pose.target).addScaledVector(_normal, dist);
+}
+
+function layout() {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const aspect = w / h;
+
+  gl.setSize(w, h);
+  focusGl.setSize(w, h);
+  css.setSize(w, h);
+  rig.scale.setScalar(h);
+
+  // Main page = viewport size; side pages = 16:10 at the same pixel density.
+  // Each object is scaled by 1/h so that (inside the h-scaled rig) it's 1:1.
+  for (const [name, { el, object, glassEl, glass }] of Object.entries(screens)) {
+    const width = `${name === 'main' ? w : Math.round(SIDE_W * h)}px`;
+    el.style.width = glassEl.style.width = width;
+    el.style.height = glassEl.style.height = `${h}px`;
+    object.scale.setScalar(1 / h);
+    glass.scale.setScalar(1 / h);
+  }
+
+  const totalWidth = world.layout(aspect);
+  rig.updateMatrixWorld(true);
+
+  // Step back far enough to see all three screens (within reason on portrait).
+  const needed = (totalWidth / 2 + 2) / (TAN * aspect);
+  poses.room.pos.set(0.45, 0.55, THREE.MathUtils.clamp(needed, FIT_DIST * 3, FIT_DIST * 6));
+  sidePose('left', aspect);
+  sidePose('right', aspect);
+
+  camera.aspect = aspect;
+  camera.near = 0.01 * h;
+  camera.far = 10000 * h;
+  scene.fog.density = CITY_FOG.density / h; // fog works in world px
+  camera.updateProjectionMatrix();
+
+  // Shadow camera bounds are in world units (not affected by rig scale). They
+  // must cover the whole room (bookcase to hook), or shadows end in a hard edge.
+  const s = world.key.shadow.camera;
+  const half = Math.max(6.5, totalWidth * 1.4) * h;
+  s.left = -half; s.right = half; s.top = half; s.bottom = -half;
+  s.near = 0.1 * h; s.far = 18 * h;
+  s.updateProjectionMatrix();
+  world.glow.distance = 3 * h;
+}
+window.addEventListener('resize', layout);
+layout();
+initPapers(); // after layout, so preview boxes have their size
+
+// ---------- Views & transitions ----------
+
+let view = 'main'; // where the camera is, or is heading
+let moving = false;
+let progress = 1;
+const from = { pos: poses.main.pos.clone(), target: poses.main.target.clone() };
+const current = { pos: poses.main.pos.clone(), target: poses.main.target.clone() };
+let fromView = 'main';
+
+function updateScreenStates() {
+  for (const [name, { el, glassEl }] of Object.entries(screens)) {
+    const away = moving || name !== view;
+    el.classList.toggle('is-away', away);
+    glassEl.classList.toggle('is-away', away);
+  }
+}
+
+// ---------- Addresses ----------
+//
+// Each view has its own address after the "#" (e.g. /#projects), so links can
+// be shared, open straight on that screen, and back/forward move between views.
+// Hash addresses need no server setup on GitHub Pages.
+
+const ROUTES = { main: "", room: "room", left: "projects", right: "research" };
+const TITLES = { main: "Charly Reux", room: "Charly Reux", left: "Projects · Charly Reux", right: "Research · Charly Reux" };
+const viewFromHash = () => Object.keys(ROUTES).find((v) => ROUTES[v] === location.hash.slice(1)) || "main";
+let pendingView = null; // a back/forward that arrived while the camera was moving
+
+function updateAddress(next, push) {
+  document.title = TITLES[next];
+  const url = ROUTES[next] ? `#${ROUTES[next]}` : location.pathname + location.search;
+  if (push) history.pushState({ view: next }, "", url);
+  else history.replaceState({ view: next }, "", url);
+}
+
+function goTo(next, { push = true } = {}) {
+  if (next === view) return;
+  if (moving) { if (!push) pendingView = next; return; }
+  from.pos.copy(current.pos);
+  from.target.copy(current.target);
+  fromView = view;
+  view = next;
+  moving = true;
+  progress = 0;
+  updateScreenStates();
+  updateAddress(next, push);
+}
+
+/** Show a view immediately, without the camera move (opening a shared link). */
+function jumpTo(next) {
+  view = fromView = next;
+  moving = false;
+  progress = 1;
+  updateScreenStates();
+  updateAddress(next, false);
+}
+
+window.addEventListener("popstate", () => goTo(viewFromHash(), { push: false }));
+
+for (const [name, { el }] of Object.entries(screens)) {
+  el.addEventListener('click', (e) => {
+    if (moving) return;
+    if (view === 'room') goTo(name);
+    else if (view === name && name === 'main' && e.target.closest('#more')) goTo('room');
+    else if (view === name && e.target.closest('[data-back]')) goTo('room');
+  });
+}
+
+// Clicking the room itself (not a screen) while zoomed on a side screen backs out.
+gl.domElement.addEventListener('click', () => {
+  if (view === 'left' || view === 'right') goTo('room');
 });
+
+window.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  if (view === 'room') goTo('main');
+  else if (view !== 'main') goTo('room');
+});
+
+// ---------- Camera ----------
+
+const mouse = new THREE.Vector2();
+const parallax = new THREE.Vector2();
+window.addEventListener('pointermove', (e) => {
+  mouse.set((e.clientX / window.innerWidth) * 2 - 1, (e.clientY / window.innerHeight) * 2 - 1);
+});
+
+const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+const camPos = new THREE.Vector3();
+const camTarget = new THREE.Vector3();
+
+function updateCamera(dt) {
+  if (moving) {
+    progress = Math.min(1, progress + dt / DURATION);
+    if (progress === 1) {
+      moving = false;
+      updateScreenStates();
+      if (pendingView && pendingView !== view) goTo(pendingView, { push: false });
+      pendingView = null;
+    }
+  }
+
+  const k = ease(progress);
+  const to = poses[view];
+  current.pos.lerpVectors(from.pos, to.pos, k);
+  current.target.lerpVectors(from.target, to.target, k);
+  if (!moving) {
+    current.pos.copy(to.pos); // follow resizes exactly
+    current.target.copy(to.target);
+  }
+
+  // Subtle mouse parallax, only in the room view (fades in/out with the move).
+  const weight = (view === 'room' ? k : 0) + (fromView === 'room' && view !== 'room' ? 1 - k : 0);
+  parallax.lerp(mouse, Math.min(1, dt * 4));
+  camPos.copy(current.pos);
+  camPos.x += parallax.x * 0.3 * weight;
+  camPos.y -= parallax.y * 0.15 * weight;
+
+  // Screen units -> world px.
+  const h = rig.scale.x;
+  camera.position.copy(camPos).multiplyScalar(h);
+  camera.lookAt(camTarget.copy(current.target).multiplyScalar(h));
+}
+
+// ---------- Hover focus ----------
+//
+// In the room view, hovering a prop (car, hammer) lifts it, shows its label,
+// and blurs everything else. The blur is a CSS filter on the main canvas and
+// the CSS3D screens; the hovered prop is put on FOCUS_LAYER and re-drawn sharp
+// by `focusGl` on top.
+
+const FOCUS_LAYER = 1;
+scene.traverse((o) => { if (o.isLight) o.layers.enable(FOCUS_LAYER); });
+
+const labels = {};
+for (const el of document.querySelectorAll('[data-label]')) labels[el.dataset.label] = el;
+
+const props = world.hoverables.map((p) => ({ ...p, t: 0, box: new THREE.Box3() }));
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+let pointerActive = false;
+let hovered = null;
+
+window.addEventListener('pointermove', (e) => {
+  pointer.set((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
+  pointerActive = true;
+});
+document.documentElement.addEventListener('pointerleave', () => { pointerActive = false; });
+
+function setHovered(prop) {
+  if (prop === hovered) return;
+  if (hovered) {
+    hovered.inner.traverse((o) => o.layers.disable(FOCUS_LAYER));
+    labels[hovered.name]?.classList.remove('is-visible');
+  }
+  hovered = prop;
+  if (hovered) {
+    hovered.inner.traverse((o) => o.layers.enable(FOCUS_LAYER));
+    labels[hovered.name]?.classList.add('is-visible');
+  } else {
+    focusGl.clear();
+  }
+  document.body.classList.toggle('is-focusing', !!hovered);
+  document.body.classList.toggle('is-hovering', !!hovered);
+}
+
+function pickProp() {
+  if (view !== 'room' || moving || !pointerActive) return null;
+  raycaster.setFromCamera(pointer, camera);
+  let best = null;
+  let bestDist = Infinity;
+  for (const p of props) {
+    p.box.setFromObject(p.outer);
+    if (p.box.isEmpty()) continue; // model still loading
+    const boxHit = raycaster.ray.intersectBox(p.box, new THREE.Vector3());
+    if (!boxHit) continue;
+    // Keep the current prop while the pointer stays within its bounds, so the
+    // lift doesn't make it flicker; otherwise require a hit on the mesh itself.
+    const dist = p === hovered
+      ? boxHit.distanceTo(raycaster.ray.origin)
+      : raycaster.intersectObject(p.outer, true)[0]?.distance;
+    if (dist !== undefined && dist < bestDist) { best = p; bestDist = dist; }
+  }
+  return best;
+}
+
+const _corner = new THREE.Vector3();
+
+/** Places the hovered prop's label beside its on-screen bounds. */
+function placeLabel(prop) {
+  const el = labels[prop.name];
+  if (!el) return;
+  const { min, max } = prop.box;
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  for (let i = 0; i < 8; i++) {
+    _corner.set(i & 1 ? max.x : min.x, i & 2 ? max.y : min.y, i & 4 ? max.z : min.z).project(camera);
+    const sx = (_corner.x + 1) / 2 * window.innerWidth;
+    const sy = (1 - _corner.y) / 2 * window.innerHeight;
+    x0 = Math.min(x0, sx); x1 = Math.max(x1, sx);
+    y0 = Math.min(y0, sy); y1 = Math.max(y1, sy);
+  }
+  const { offsetWidth: w, offsetHeight: h } = el;
+  const gap = 16;
+  let x = x1 + gap;
+  if (x + w > window.innerWidth - gap) x = x0 - gap - w; // flip to the left side
+  const y = THREE.MathUtils.clamp(y0 + (y1 - y0) * 0.3 - h / 2, gap, window.innerHeight - h - gap);
+  el.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
+}
+
+const liftEase = (t) => 1 - Math.pow(1 - t, 3);
+
+function updateHover(dt) {
+  setHovered(pickProp());
+  for (const p of props) {
+    p.t += ((p === hovered ? 1 : 0) - p.t) * Math.min(1, dt * 8);
+    p.inner.position.copy(p.liftAxis).multiplyScalar(p.lift * liftEase(p.t));
+  }
+  if (hovered) placeLabel(hovered);
+}
+
+function renderFocus() {
+  if (!hovered) return;
+  const background = scene.background;
+  scene.background = null;
+  camera.layers.set(FOCUS_LAYER);
+  focusGl.render(scene, camera);
+  camera.layers.set(0);
+  scene.background = background;
+}
+
+// ---------- Loop ----------
+
+jumpTo(viewFromHash()); // open on the view the address asks for
+const clock = new THREE.Clock();
+gl.setAnimationLoop(() => {
+  const dt = Math.min(clock.getDelta(), 0.05);
+  updateCamera(dt);
+  updateHover(dt);
+  world.tick(clock.elapsedTime, dt);
+  gl.render(scene, camera);
+  renderFocus();
+  css.render(scene, camera);
+  // First frame is on screen: reveal the side screens (see style.css).
+  if (!document.body.classList.contains('is-ready')) document.body.classList.add('is-ready');
+});
+
+// Debug hook: jump straight to a view from the console, e.g. __site.jump('left').
+window.__site = {
+  scene, // for inspecting from the console
+
+  goTo,
+  jump: jumpTo,
+};

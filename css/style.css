@@ -3,13 +3,14 @@
 html, body {
   margin: 0;
   height: 100%;
-  background: #0b0b0f;
-  color: #eaeaf0;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   overflow: hidden;
+  background: #07070a;
+  font-family: "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
-#scene {
+/* ---------- 3D layers ---------- */
+
+#world, #world canvas {
   position: fixed;
   inset: 0;
   width: 100%;
@@ -17,15 +18,364 @@ html, body {
   display: block;
 }
 
-.overlay {
-  position: relative;
-  z-index: 1;
-  padding: 2rem;
+/* CSS3DRenderer's root: on top of the WebGL canvas, clicks pass through
+   except on the page itself. */
+.css3d {
+  position: fixed !important;
+  inset: 0;
   pointer-events: none;
 }
 
-.overlay h1 {
-  margin: 0;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+/* ---------- Screens (pages mounted on the monitors) ---------- */
+
+.page {
+  /* width/height are set in JS (main screen = viewport size) */
+  overflow-y: auto;
+  background: #f6f5f1;
+  color: #1d1d22;
 }
+
+.page.is-away { cursor: zoom-in; }
+.page.is-away:hover { filter: brightness(1.06); }
+.page.is-away * { pointer-events: none; }
+
+.page__inner {
+  min-height: 100%;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 64px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  text-align: center;
+}
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.hero__avatar {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 8px 30px rgb(0 0 0 / 0.15);
+}
+
+.hero__name {
+  margin: 0;
+  font-size: clamp(2.2rem, 6vw, 3.4rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.intro p {
+  margin: 0 0 1em;
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: #45454d;
+}
+
+.btn {
+  font: inherit;
+  font-weight: 600;
+  padding: 14px 28px;
+  border: 0;
+  border-radius: 0;
+  background: #1d1d22;
+  color: #f6f5f1;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+  /* Hint: after 2 s, a small hop every few seconds, inviting a click. */
+  animation: btn-nudge 4s ease-in-out 2s infinite;
+}
+.btn:hover { background: #34343c; transform: translateY(-1px); animation: none; }
+.btn:active { transform: translateY(0); }
+
+@keyframes btn-nudge {
+  0%, 18%, 100% { transform: translateY(0); }
+  6% { transform: translateY(-6px); }
+  11% { transform: translateY(0); }
+  14% { transform: translateY(-2px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn { animation: none; }
+}
+
+/* ---------- Side screens ---------- */
+
+.page--dark { background: #17181e; color: #e6e6ee; }
+.page--warm { background: #fbf3e6; color: #2a2118; }
+.page--clean { background: #f6f5f1; color: #1d1d22; } /* same as the welcome page */
+
+.side {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 48px 56px 64px;
+}
+
+.side h2 {
+  margin: 0 0 12px;
+  font-size: 2.6rem;
+  letter-spacing: -0.02em;
+}
+
+.side .side__lead {
+  margin: 0 0 36px;
+  font-size: 1.15rem;
+  line-height: 1.6;
+  opacity: 0.75;
+}
+
+.side h3 { margin: 0 0 6px; font-size: 1.15rem; }
+.side p { margin: 0; line-height: 1.6; }
+
+.back {
+  font: inherit;
+  font-size: 0.95rem;
+  margin-bottom: 28px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  background: transparent;
+  color: inherit;
+  opacity: 0.7;
+  cursor: pointer;
+}
+.back:hover { opacity: 1; }
+.page.is-away .back { visibility: hidden; }
+
+/* Project list: one per row, square white cards. */
+.cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.card {
+  padding: 24px 28px;
+  background: #ffffff;
+  border: 1px solid #e3e1da;
+}
+.card p { color: #55555e; }
+
+.card a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+.card a:hover { text-decoration-thickness: 2px; }
+
+.timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-left: 2px solid #e2cfb3;
+}
+
+.timeline li {
+  display: flex;
+  gap: 24px;
+  padding: 0 0 28px 24px;
+  position: relative;
+}
+.timeline li::before {
+  content: "";
+  position: absolute;
+  left: -7px;
+  top: 6px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #d9822b;
+}
+.timeline span { font-weight: 700; color: #b0651d; min-width: 3.5em; }
+.timeline p { color: #6b5a47; }
+
+
+/* ---------- Hover focus on props ---------- */
+
+/* Sharp copy of the hovered prop, drawn above the (blurred) scene. */
+#focus {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+#world canvas,
+.css3d {
+  transition: filter 0.35s ease;
+}
+
+body.is-focusing #world canvas,
+body.is-focusing .css3d { filter: blur(3px); }
+body.is-focusing #focus { opacity: 1; }
+body.is-hovering { cursor: pointer; }
+
+.hover-label {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 10;
+  max-width: 260px;
+  padding: 14px 16px;
+  /*backdrop-filter: blur(6px);*/
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s ease, translate 0.25s ease;
+  translate: 0 6px;
+}
+.hover-label.is-visible { opacity: 1; translate: 0 0; }
+.hover-label h3 { margin: 0 0 6px; font-size: 1rem; }
+.hover-label p { margin: 0; font-size: 0.875rem; line-height: 1.5; color: #c9c9d3; }
+
+/* ---------- Screen glass (shown when a screen isn't the one in focus) ---------- */
+
+.glass {
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  background:
+    linear-gradient(118deg, rgb(255 255 255 / 0.09) 0%, rgb(255 255 255 / 0.03) 30%, transparent 55%),
+    radial-gradient(120% 90% at 50% 50%, transparent 60%, rgb(0 0 0 / 0.22) 100%);
+}
+.glass.is-away { opacity: 1; }
+
+/* ---------- First load ----------
+   Before main.js has mounted the screens in 3D (three.js loads from a CDN),
+   show only the welcome page, exactly where it will end up: full window. */
+
+body:not(.is-ready) [data-screen]:not([data-screen="main"]) { display: none; }
+body:not(.is-ready) #page {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+}
+
+/* ---------- Research screen ---------- */
+
+.section-title,
+.research-now h3 {
+  margin: 0 0 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8a8a93;
+}
+
+.research-now {
+  margin: 8px 0 40px;
+  padding: 20px 24px;
+  background: #ffffff;
+  border: 1px solid #e3e1da;
+  border-left: 3px solid #1d1d22;
+}
+.research-now p { font-size: 1.05rem; color: #33333a; }
+
+.papers {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.paper {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 24px;
+  padding: 20px;
+  background: #ffffff;
+  border: 1px solid #e3e1da;
+}
+
+/* First page of the PDF, or a blank page placeholder until it renders. */
+.paper__preview {
+  aspect-ratio: 1 / 1.414;
+  background:
+    repeating-linear-gradient(#ffffff 0 10px, #eeede8 10px 12px) 14px 34px / calc(100% - 28px) calc(100% - 52px) no-repeat,
+    linear-gradient(#d9d7cf, #d9d7cf) 14px 16px / 60% 8px no-repeat,
+    #ffffff;
+  border: 1px solid #e3e1da;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.06);
+  overflow: hidden;
+}
+.paper__preview canvas { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.paper.has-preview .paper__preview { background: #ffffff; }
+
+.paper__body h4 { margin: 0 0 6px; font-size: 1.2rem; line-height: 1.3; }
+.paper__body p { color: #55555e; }
+.paper__body .paper__meta { margin: 0 0 12px; font-size: 0.9rem; color: #8a8a93; }
+
+.paper__link {
+  display: inline-block;
+  margin-top: 16px;
+  padding: 8px 16px;
+  border: 1px solid #1d1d22;
+  color: #1d1d22;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+.paper__link:hover { background: #1d1d22; color: #f6f5f1; }
+.paper.is-missing .paper__link { opacity: 0.35; pointer-events: none; }
+.paper__alt {
+  display: inline-block;
+  margin: 16px 0 0 14px;
+  font-size: 0.9rem;
+  color: #55555e;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.paper__alt:hover { color: #1d1d22; }
+
+/* Abstracts: first lines only until "Show more". */
+.paper__summary {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  overflow: hidden;
+}
+.paper.is-open .paper__summary { display: block; }
+
+.paper__more {
+  margin-top: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.85rem;
+  color: #8a8a93;
+  cursor: pointer;
+}
+.paper__more:hover { color: #1d1d22; }
+.page.is-away .paper__more { visibility: hidden; }
+
+.paper__actions { margin-top: 4px; }
+
+/* Links in the welcome text: same treatment as the project cards. */
+.intro a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+.intro a:hover { text-decoration-thickness: 2px; }

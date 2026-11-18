@@ -1,0 +1,36 @@
+name: Update papers
+
+# Weekly: pull new papers (and PDFs) from HAL into data/papers.json, commit
+# them, and let the deploy workflow publish the site (see deploy.yml).
+on:
+  schedule:
+    - cron: '0 6 * * 1' # Mondays, 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-papers
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/update-papers.mjs
+      - name: Commit changes
+        run: |
+          if git status --porcelain data assets/papers | grep -q .; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add data assets/papers
+            git commit -m "Update papers from HAL"
+            git push
+          else
+            echo "No new papers."
+          fi

@@ -1,0 +1,32 @@
+[
+  {
+    "halId": "hal-05582911",
+    "title": "Imperfect Visual Verification for Code Edition: A Case Study on TikZ",
+    "authors": "C. Reux, M. Acher, D. E. Khelladi, C. Quinton, O. Barais",
+    "venue": "Preprint",
+    "year": 2026,
+    "pdf": "assets/papers/imperfect-visual-verification-tikz.pdf",
+    "previewPage": 2,
+    "summary": "LLMs have significantly advanced code generation, enabling the synthesis of functional programs. While recent systems achieve strong performance on many coding benchmarks, tasks involving programs such as TikZ that generate visual artifacts remain challenging, in particular on visual code customization. Unlike generation from scratch, customization requires localized, semantics-preserving edits: the model must locate relevant code, modify it according to the instruction, and preserve the remaining structure and rendering. Approaches based on post-hoc iterative refinement/correction where a verifier provides feedback to guide corrections, have shown promise. However, in the case of programs with a visual outcome such as in TikZ, where correctness is harder or likely impossible to formalize and evaluate automatically, deterministic verifiers do not exist. Hence, developers can only rely on imperfect verifiers. In this paper, we conduct an empirical study to answer:to what extent can iterative refinement remain effective when the verifier itself is unreliable? We use TikZ as a focused case study that isolates the core difficulties of the problem (weak code structure, fine-grained visual semantics, and difficult feature localization) in a controlled and challenging setting. We define visual code customization as an iterative editing problem with an imperfect oracle, and introduce a framework for analyzing such iterative refinements. We conduct a large-scale study and evaluate multiple LLM-based and tool-augmented visual verifiers within iterative refinement pipelines, and perform extensive manual annotation of refinement trajectories to assess verifier behavior and feedback quality. Our findings show that even imperfect verifiers can determine with moderate accuracy whether visual instructions are applied to code, achieving F1-scores up to 0.815. Feedback improves iterative refinement, especially for weaker models, adding 11–20 perfect customizations for Qwen3-vl-30b-a3b-Instruct, while stronger models like Gemini-3 gain fewer improvements (+5) but benefit more from accurate verification that prevents premature acceptance. Feedback is effective only when it precisely identifies image issues, provides actionable guidance, addresses all relevant problems, and remains grounded in the original instruction."
+  },
+  {
+    "halId": "hal-05349203",
+    "title": "Did You Forkget It? Detecting One-Day Vulnerabilities in Open-source Forks With Global History Analysis",
+    "authors": "R. Lefeuvre, C. Reux, S. Zacchiroli, O. Barais, B. Combemale",
+    "venue": "SCORED",
+    "year": 2026,
+    "pdf": "assets/papers/did-you-forkget-it-scored26.pdf",
+    "previewPage": 2,
+    "summary": "Tracking vulnerabilities inherited from third-party open-source software is a well-known challenge, often addressed by tracing the threads of dependency information. However, vulnerabilities can also propagate through forking: a code repository forked after the introduction of a vulnerability, but before it is patched, may remain vulnerable long after the vulnerability has been fixed in the initial repository. History analysis approaches are used to track vulnerable software versions at scale. However, such approaches fail to track vulnerabilities in forks, leaving fork maintainers to identify them manually. This paper presents a global history analysis approach to help software developers identify one-day (known but unpatched) vulnerabilities in forked repositories. Leveraging the global graph of public code, as captured by the Software Heritage archive, our approach propagates vulnerability information at the commit level and performs automated impact analysis. Starting from 7162 repositories with vulnerable commits listed in OSV, we propagate vulnerability information to 2.2 million forks. We evaluate our approach by filtering forks with significant user bases whose latest commit is still potentially vulnerable, manually auditing the code, and contacting maintainers for confirmation and responsible disclosure. This process identified 135 high-severity one-day vulnerabilities, achieving a precision of 0.69, with 9 confirmed by maintainers."
+  },
+  {
+    "halId": "hal-05049250",
+    "title": "LLM Code Customization with Visual Results: A Benchmark on TikZ",
+    "authors": "C. Reux, M. Acher, D. E. Khelladi, O. Barais, C. Quinton",
+    "venue": "EASE",
+    "year": 2025,
+    "pdf": "assets/papers/vtikz-benchmark-ease25.pdf",
+    "previewPage": 2,
+    "summary": "With the rise of AI-based code generation, customizing existing code out of natural language instructions to modify visual results -such as figures or images -has become possible, promising to reduce the need for deep programming expertise. However, even experienced developers can struggle with this task, as it requires identifying relevant code regions (feature location), generating valid code variants, and ensuring the modifications reliably align with user intent. In this paper, we introduce vTikZ, the first benchmark designed to evaluate the ability of Large Language Models (LLMs) to customize code while preserving coherent visual outcomes. Our benchmark consists of carefully curated vTikZ editing scenarios, parameterized ground truths, and a reviewing tool that leverages visual feedback to assess correctness. Empirical evaluation with stateof-the-art LLMs shows that existing solutions struggle to reliably modify code in alignment with visual intent, highlighting a gap in current AI-assisted code editing approaches. We argue that vTikZ opens new research directions for integrating LLMs with visual feedback mechanisms to improve code customization tasks in various domains beyond TikZ, including image processing, art creation, Web design, and 3D modeling."
+  }
+]
