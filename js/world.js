@@ -1197,6 +1197,12 @@ export function buildWorld(rig) {
 
   return {
     layout,
+    // How far the room reaches on each side (x and depth z), for the portrait
+    // phone view to turn towards: the bookcase's left side and the bag.
+    edges: {
+      left: { x: bookcase.group.position.x - BOOKCASE.width / 2 + 0.3, z: WALL_Z + BOOKCASE.depth },
+      right: { x: hook.position.x + 0.45, z: WALL_Z + 0.3 },
+    },
     tick: (t, dt) => city.userData.update(t, dt),
     key,
     glow,

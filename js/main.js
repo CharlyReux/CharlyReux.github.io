@@ -104,7 +104,8 @@ function sidePose(name, aspect) {
   pose.pos.copy(pose.target).addScaledVector(_normal, dist);
 }
 
-let roomPan = 0; // sideways pan for full tilt in the room view (portrait only, set in layout)
+// Portrait phones: how far the view turns (aim shift at the target, per side) at full tilt.
+const roomTurn = { left: 0, right: 0 };
 
 function layout() {
   const w = window.innerWidth;
@@ -132,8 +133,16 @@ function layout() {
   // Step back far enough to see all three screens (within reason on portrait).
   const needed = (totalWidth / 2 + 2) / (TAN * aspect);
   poses.room.pos.set(0.45, 0.55, THREE.MathUtils.clamp(needed, FIT_DIST * 3, FIT_DIST * 6));
-  // Portrait phones can't fit the room: tilting left/right pans over what's cut off.
-  roomPan = aspect < 1 ? Math.max(0, totalWidth / 2 + 2 - poses.room.pos.z * TAN * aspect) : 0;
+  // Portrait phones can't fit the room: turning the phone left/right turns the
+  // view just far enough to bring that side's edge (bookcase, bag) into view.
+  const { pos: rp, target: rt } = poses.room;
+  const halfFov = Math.atan(TAN * aspect);
+  for (const side of ['left', 'right']) {
+    const e = world.edges[side];
+    const toEdge = Math.atan(Math.abs(e.x - rp.x) / (rp.z - e.z));
+    const turn = aspect < 1 ? Math.max(0, toEdge - halfFov * 0.85) : 0;
+    roomTurn[side] = Math.tan(turn) * (rp.z - rt.z);
+  }
   sidePose('left', aspect);
   sidePose('right', aspect);
 
@@ -273,8 +282,10 @@ function onTilt(e) {
   if (angle === 90) [h, v] = [rx, -ry];
   else if (angle === -90 || angle === 270) [h, v] = [-rx, ry];
   h -= rz; // steering-wheel roll counts as left/right too
+  const portrait = window.innerHeight > window.innerWidth;
+  if (portrait) h = -ry - rz; // portrait looks around: turn (or roll) the phone left to look left
   const clamp = (t, range) => THREE.MathUtils.clamp(t / range, -1, 1);
-  mouse.set(clamp(h, window.innerHeight > window.innerWidth ? PAN_RANGE : TILT_RANGE), clamp(v, TILT_RANGE));
+  mouse.set(clamp(h, portrait ? PAN_RANGE : TILT_RANGE), clamp(v, TILT_RANGE));
 }
 if (window.matchMedia('(pointer: coarse)').matches && 'DeviceOrientationEvent' in window) {
   window.addEventListener('deviceorientation', onTilt);
@@ -317,10 +328,12 @@ function updateCamera(dt) {
   const weight = (view === 'room' ? k : 0) + (fromView === 'room' && view !== 'room' ? 1 - k : 0);
   parallax.lerp(mouse, Math.min(1, dt * 4));
   camPos.copy(current.pos);
-  camPos.x += parallax.x * 0.3 * parallaxGain * weight;
+  const look = parallaxGain > 1 && roomTurn.left + roomTurn.right > 0; // portrait phone: left/right also turns the view
+  const slide = parallax.x * 0.3 * (look ? 1 : parallaxGain) * weight; // portrait: gentle, like desktop
+  camPos.x += slide;
   camPos.y -= parallax.y * 0.15 * parallaxGain * weight;
-  const pan = parallaxGain > 1 ? parallax.x * roomPan * weight : 0; // tilt only (phones)
-  camPos.x += pan;
+  const turn = parallax.x < 0 ? roomTurn.left : roomTurn.right;
+  const pan = look ? slide + parallax.x * turn * weight : 0; // aim towards the side that's cut off
 
   // Screen units -> world px.
   const h = rig.scale.x;
