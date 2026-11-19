@@ -40,6 +40,7 @@ focusGl.setPixelRatio(gl.getPixelRatio());
 focusGl.outputColorSpace = THREE.SRGBColorSpace;
 focusGl.setClearColor(0x000000, 0);
 focusGl.domElement.id = 'focus';
+focusGl.domElement.setAttribute('aria-hidden', 'true'); // decorative (described in ARRIVALS.room)
 document.getElementById('world').after(focusGl.domElement);
 
 const css = new CSS3DRenderer();
@@ -174,12 +175,71 @@ const from = { pos: poses.main.pos.clone(), target: poses.main.target.clone() };
 const current = { pos: poses.main.pos.clone(), target: poses.main.target.clone() };
 let fromView = 'main';
 
+// ---------- Accessibility (keyboard & screen readers; nothing visible changes) ----------
+//
+// - Screens that aren't the one in view are inert, so Tab and screen readers
+//   skip what can't be seen. In the room view each monitor is a button
+//   (Tab + Enter opens it), with an outline only for keyboard users.
+// - After a camera move, focus goes to the new screen's heading (or back to the
+//   monitor you left), but only when the move came from the keyboard or a
+//   screen reader, so mouse and touch users never see a focus ring.
+// - Each arrival is announced in a hidden live region.
+// - "Reduce motion": camera moves are instant and the parallax/tilt is off.
+
+const SCREEN_NAMES = { main: 'About me', left: 'Projects', right: 'Research' };
+const ARRIVALS = {
+  main: 'About me',
+  left: 'Projects',
+  right: 'Research',
+  room: "Charly's room: a desk with three monitors in front of a large window onto a vertical neon city. "
+    + 'A bookcase with books, a laptop and climbing gear is on the left, a climbing bag hangs on the right. '
+    + 'Tab to the monitors to open a screen, or to the objects to read about them. Escape goes back.',
+};
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+const announcer = document.createElement('div');
+announcer.className = 'sr-only';
+announcer.setAttribute('aria-live', 'polite');
+document.body.appendChild(announcer);
+const announce = (text) => { announcer.textContent = ''; setTimeout(() => { announcer.textContent = text; }, 50); };
+
+// Is the visitor navigating by keyboard (has used Tab since the last pointer
+// press) or a screen reader (clicks with detail 0, no pointerdown)? Only then
+// does focus move, so e.g. a mouse user pressing Esc never sees an outline.
+let pointerInput = true;
+window.addEventListener('pointerdown', () => { pointerInput = true; }, true);
+window.addEventListener('keydown', (e) => { if (e.key === 'Tab') pointerInput = false; }, true);
+window.addEventListener('click', (e) => { if (e.detail === 0) pointerInput = false; }, true);
+let focusOnArrival = false;
+
 function updateScreenStates() {
   for (const [name, { el, glassEl }] of Object.entries(screens)) {
     const away = moving || name !== view;
     el.classList.toggle('is-away', away);
     glassEl.classList.toggle('is-away', away);
+    for (const child of el.children) child.inert = away;
+    if (view === 'room' && !moving) {
+      el.tabIndex = 0;
+      el.setAttribute('role', 'button');
+      el.setAttribute('aria-label', `Open ${SCREEN_NAMES[name]}`);
+    } else {
+      el.removeAttribute('tabindex');
+      el.removeAttribute('role');
+      el.removeAttribute('aria-label');
+    }
   }
+  propList.inert = view !== 'room' || moving;
+}
+
+/** Called when a camera move ends: announce the view, and move focus if it was keyboard-driven. */
+function arrived(previous) {
+  announce(ARRIVALS[view]);
+  if (!focusOnArrival) return;
+  focusOnArrival = false;
+  let target;
+  if (view === 'room') target = screens[previous]?.el || screens.main.el;
+  else target = screens[view].el.querySelector('h1, h2');
+  if (target && target.tabIndex < 0 && !target.matches('[tabindex]')) target.tabIndex = -1;
+  target?.focus({ preventScroll: true });
 }
 
 // ---------- Addresses ----------
@@ -209,6 +269,7 @@ function goTo(next, { push = true } = {}) {
   view = next;
   moving = true;
   progress = 0;
+  focusOnArrival = !pointerInput;
   updateScreenStates();
   updateAddress(next, push);
 }
@@ -225,6 +286,10 @@ function jumpTo(next) {
 window.addEventListener("popstate", () => goTo(viewFromHash(), { push: false }));
 
 for (const [name, { el }] of Object.entries(screens)) {
+  el.addEventListener('keydown', (e) => {
+    if (e.target !== el || view !== 'room' || moving) return;
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goTo(name); }
+  });
   el.addEventListener('click', (e) => {
     if (moving) return;
     if (view === 'room') goTo(name);
@@ -300,16 +365,18 @@ if (window.matchMedia('(pointer: coarse)').matches && 'DeviceOrientationEvent' i
   }
 }
 
+const NO_PARALLAX = new THREE.Vector2();
 const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 const camPos = new THREE.Vector3();
 const camTarget = new THREE.Vector3();
 
 function updateCamera(dt) {
   if (moving) {
-    progress = Math.min(1, progress + dt / DURATION);
+    progress = Math.min(1, progress + dt / (reduceMotion.matches ? 0.001 : DURATION));
     if (progress === 1) {
       moving = false;
       updateScreenStates();
+      if (!pendingView || pendingView === view) arrived(fromView);
       if (pendingView && pendingView !== view) goTo(pendingView, { push: false });
       pendingView = null;
     }
@@ -326,7 +393,7 @@ function updateCamera(dt) {
 
   // Subtle mouse parallax, only in the room view (fades in/out with the move).
   const weight = (view === 'room' ? k : 0) + (fromView === 'room' && view !== 'room' ? 1 - k : 0);
-  parallax.lerp(mouse, Math.min(1, dt * 4));
+  parallax.lerp(reduceMotion.matches ? NO_PARALLAX : mouse, Math.min(1, dt * 4));
   camPos.copy(current.pos);
   const look = parallaxGain > 1 && roomTurn.left + roomTurn.right > 0; // portrait phone: left/right also turns the view
   const slide = parallax.x * 0.3 * (look ? 1 : parallaxGain) * weight; // portrait: gentle, like desktop
@@ -361,6 +428,40 @@ const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
 let pointerActive = false;
 let hovered = null;
+
+// Keyboard and screen readers: a hidden list of the room's objects. Tabbing to
+// one shows it exactly like hovering (lift, label, blur); its caption is read
+// out, and the laptop's link is reachable. The visual labels stay decorative.
+const PROP_NAMES = {
+  car: 'Toy car', hammer: 'Gravity hammer', poster: 'Poster', dvd: 'DVD case',
+  laptop: 'Laptop', drill: 'Drill and climbing holds', bag: 'Climbing bag', trainer: 'Finger trainer',
+};
+let keyProp = null;
+const propList = document.createElement('div');
+propList.className = 'sr-only';
+propList.setAttribute('role', 'group');
+propList.setAttribute('aria-label', 'Objects in the room');
+propList.inert = true;
+for (const prop of props) {
+  const label = labels[prop.name];
+  label?.setAttribute('aria-hidden', 'true');
+  if (label) label.inert = true;
+  const item = document.createElement('div');
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.textContent = PROP_NAMES[prop.name] || prop.name;
+  const caption = document.createElement('div');
+  caption.id = `prop-caption-${prop.name}`;
+  caption.innerHTML = label ? label.innerHTML : '';
+  button.setAttribute('aria-describedby', caption.id);
+  item.append(button, caption);
+  item.addEventListener('focusin', () => { keyProp = prop; });
+  item.addEventListener('focusout', (e) => {
+    if (!item.contains(e.relatedTarget) && keyProp === prop) keyProp = null;
+  });
+  propList.appendChild(item);
+}
+document.body.appendChild(propList);
 
 window.addEventListener('pointermove', (e) => {
   if (e.pointerType === 'touch') return;
@@ -458,7 +559,9 @@ function placeLabel(prop) {
 const liftEase = (t) => 1 - Math.pow(1 - t, 3);
 
 function updateHover(dt) {
-  if (usingTouch) {
+  if (keyProp && view === 'room' && !moving) {
+    setHovered(keyProp);
+  } else if (usingTouch) {
     if (view !== 'room' || moving) tapped = null;
     setHovered(tapped);
   } else {

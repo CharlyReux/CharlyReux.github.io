@@ -83,6 +83,10 @@ function paperCard(p) {
   dl.setAttribute('download', '');
   if (p.halId) {
     const hal = el('a', 'paper__alt', 'View on HAL');
+    const hint = document.createElement('span');
+    hint.className = 'sr-only';
+    hint.textContent = ' (opens in a new tab)';
+    hal.appendChild(hint);
     actions.appendChild(hal);
     hal.href = `https://hal.science/${p.halId}`;
     hal.target = '_blank';

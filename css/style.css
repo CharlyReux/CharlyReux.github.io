@@ -379,3 +379,27 @@ body:not(.is-ready) #page {
   text-underline-offset: 3px;
 }
 .intro a:hover { text-decoration-thickness: 2px; }
+
+/* ---------- Accessibility (invisible unless using a keyboard) ---------- */
+
+/* Hidden from view, still read by screen readers (see main.js). */
+.sr-only {
+  position: fixed !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+/* Monitors are buttons in the room view: outline only for keyboard focus. */
+.page.is-away:focus-visible {
+  outline: 4px solid #4c8dff;
+  outline-offset: -4px;
+  filter: brightness(1.06);
+}
+/* Headings get focus after a keyboard move, just so screen readers start there. */
+.page h1[tabindex="-1"]:focus,
+.page h2[tabindex="-1"]:focus { outline: none; }

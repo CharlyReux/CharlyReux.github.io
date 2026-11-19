@@ -116,7 +116,7 @@ const cardHtml = (p) => `        <li class="paper" data-pdf="${esc(p.pdf)}" data
             <button class="paper__more" type="button">Show more</button>
             <div class="paper__actions">
               <a class="paper__link" href="${esc(p.pdf)}" download>Download PDF</a>${p.halId ? `
-              <a class="paper__alt" href="https://hal.science/${esc(p.halId)}" target="_blank" rel="noopener">View on HAL</a>` : ''}
+              <a class="paper__alt" href="https://hal.science/${esc(p.halId)}" target="_blank" rel="noopener">View on HAL<span class="sr-only"> (opens in a new tab)</span></a>` : ''}
             </div>
           </div>
         </li>`;

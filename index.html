@@ -193,14 +193,14 @@
 </head>
 <body>
   <!-- WebGL world (room, monitor). Sits behind the page. -->
-  <div id="world"></div>
+  <div id="world" aria-hidden="true"></div>
 
   <!-- Screens. main.js mounts each one on a monitor in 3D. -->
 
   <!-- Left monitor -->
   <div id="screen-left" class="page page--clean" data-screen="left">
     <div class="side">
-      <button class="back" type="button" data-back>← Back</button>
+      <button class="back" type="button" data-back><span aria-hidden="true">←</span> Back</button>
       <h2>Some Personal Projects</h2>
       <p class="side__lead">Some things I have tried and that are in progress</p>
       <ul class="cards">
@@ -223,7 +223,7 @@
   <!-- Right monitor: research and papers. -->
   <div id="screen-right" class="page page--clean" data-screen="right">
     <div class="side">
-      <button class="back" type="button" data-back>← Back</button>
+      <button class="back" type="button" data-back><span aria-hidden="true">←</span> Back</button>
       <h2>My Research</h2>
       <h3 class="section-title">Papers</h3>
       <!-- Filled from data/papers.json by js/papers.js (kept up to date from HAL
@@ -239,7 +239,7 @@
             <button class="paper__more" type="button">Show more</button>
             <div class="paper__actions">
               <a class="paper__link" href="assets/papers/imperfect-visual-verification-tikz.pdf" download>Download PDF</a>
-              <a class="paper__alt" href="https://hal.science/hal-05582911" target="_blank" rel="noopener">View on HAL</a>
+              <a class="paper__alt" href="https://hal.science/hal-05582911" target="_blank" rel="noopener">View on HAL<span class="sr-only"> (opens in a new tab)</span></a>
             </div>
           </div>
         </li>
@@ -252,7 +252,7 @@
             <button class="paper__more" type="button">Show more</button>
             <div class="paper__actions">
               <a class="paper__link" href="assets/papers/did-you-forkget-it-scored26.pdf" download>Download PDF</a>
-              <a class="paper__alt" href="https://hal.science/hal-05349203" target="_blank" rel="noopener">View on HAL</a>
+              <a class="paper__alt" href="https://hal.science/hal-05349203" target="_blank" rel="noopener">View on HAL<span class="sr-only"> (opens in a new tab)</span></a>
             </div>
           </div>
         </li>
@@ -265,7 +265,7 @@
             <button class="paper__more" type="button">Show more</button>
             <div class="paper__actions">
               <a class="paper__link" href="assets/papers/vtikz-benchmark-ease25.pdf" download>Download PDF</a>
-              <a class="paper__alt" href="https://hal.science/hal-05049250" target="_blank" rel="noopener">View on HAL</a>
+              <a class="paper__alt" href="https://hal.science/hal-05049250" target="_blank" rel="noopener">View on HAL<span class="sr-only"> (opens in a new tab)</span></a>
             </div>
           </div>
         </li>
@@ -278,7 +278,7 @@
   <div id="page" class="page" data-screen="main">
     <div class="page__inner">
       <header class="hero">
-        <img class="hero__avatar" src="assets/avatar.jpg" alt="Charly Reux" width="160" height="160" />
+        <img class="hero__avatar" src="assets/avatar.jpg" alt="" width="160" height="160" />
         <h1 class="hero__name">Charly Reux</h1>
       </header>
 
