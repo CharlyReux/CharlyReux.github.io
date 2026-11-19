@@ -245,23 +245,36 @@ window.addEventListener('pointermove', (e) => {
 });
 
 // Phones: tilting the phone moves the view like the mouse does. The rest
-// position slowly follows how the phone is held, so only tilts count.
+// orientation slowly follows how the phone is held, so only tilts count.
+// Tilts are measured from the full 3D orientation (not the raw beta/gamma
+// angles, which flip and jump when the phone is held upright).
 const TILT_RANGE = 18; // degrees of tilt for the full parallax
-const TILT_FOLLOW = 0.004; // per reading (~60/s): rest position catches up in a few seconds
+const PAN_RANGE = 10; // portrait: degrees of left/right tilt to pan all the way to a side
+const TILT_FOLLOW = 0.002; // per reading (~60/s): rest orientation catches up in ~10 s
+const DEG = THREE.MathUtils.DEG2RAD;
+const tiltEuler = new THREE.Euler();
+const tiltNow = new THREE.Quaternion();
+const tiltRel = new THREE.Quaternion();
 let tiltRest = null;
 let parallaxGain = 1; // the phone camera sits much further back, so tilt moves it more
 function onTilt(e) {
   if (e.beta === null || e.gamma === null) return;
+  // Device -> earth rotation (W3C: Rz(alpha) Rx(beta) Ry(gamma)).
+  tiltNow.setFromEuler(tiltEuler.set(e.beta * DEG, e.gamma * DEG, (e.alpha || 0) * DEG, 'ZXY'));
+  if (!tiltRest) { tiltRest = tiltNow.clone(); parallaxGain = 4; }
+  tiltRest.slerp(tiltNow, TILT_FOLLOW);
+  // Rotation since rest, in the phone's own axes (x right, y up the screen, z out of it), in degrees.
+  tiltRel.copy(tiltRest).invert().multiply(tiltNow);
+  const k = (tiltRel.w < 0 ? -2 : 2) / DEG;
+  const rx = tiltRel.x * k, ry = tiltRel.y * k, rz = tiltRel.z * k;
+  // Screen axes: turning or rolling the phone right = right, top edge towards the user = up.
   const angle = screen.orientation?.angle ?? window.orientation ?? 0;
-  // Tilt in screen axes: x = right edge down, y = top edge towards the user.
-  let x = e.gamma, y = e.beta;
-  if (angle === 90) [x, y] = [e.beta, -e.gamma];
-  else if (angle === -90 || angle === 270) [x, y] = [-e.beta, e.gamma];
-  if (!tiltRest) { tiltRest = { x, y }; parallaxGain = 4; }
-  tiltRest.x += (x - tiltRest.x) * TILT_FOLLOW;
-  tiltRest.y += (y - tiltRest.y) * TILT_FOLLOW;
-  const clamp = (v) => THREE.MathUtils.clamp(v / TILT_RANGE, -1, 1);
-  mouse.set(clamp(x - tiltRest.x), clamp(y - tiltRest.y));
+  let h = ry, v = rx;
+  if (angle === 90) [h, v] = [rx, -ry];
+  else if (angle === -90 || angle === 270) [h, v] = [-rx, ry];
+  h -= rz; // steering-wheel roll counts as left/right too
+  const clamp = (t, range) => THREE.MathUtils.clamp(t / range, -1, 1);
+  mouse.set(clamp(h, window.innerHeight > window.innerWidth ? PAN_RANGE : TILT_RANGE), clamp(v, TILT_RANGE));
 }
 if (window.matchMedia('(pointer: coarse)').matches && 'DeviceOrientationEvent' in window) {
   window.addEventListener('deviceorientation', onTilt);
