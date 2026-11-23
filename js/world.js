@@ -2,6 +2,9 @@ import * as THREE from 'three';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+
+// One loader for every model; they're all meshopt-compressed.
+const gltfLoader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 import { makeCity } from './city.js';
 import { woodMaps, plasticMaps, brushedMaps, keycapMaps, legendTexture } from './textures.js';
 
@@ -722,7 +725,7 @@ function makeLaptop() {
  */
 function makeDrill() {
   const g = new THREE.Group();
-  new GLTFLoader().load("assets/models/makita/drill.glb", ({ scene }) => {
+  gltfLoader.load("assets/models/makita/drill.glb", ({ scene }) => {
     scene.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; } });
     scene.scale.setScalar(3); // metres -> screen units (1 unit ≈ 33 cm)
     scene.rotation.x = Math.PI / 2; // on its side: the scan's thin axis (z) becomes vertical
@@ -760,7 +763,7 @@ function makeJug() {
   // (u 0–1 and 1–2) share one side-by-side atlas, hence repeat.x = 0.5.
   const atlas = loadTexture("assets/models/holds/jug.jpg");
   atlas.repeat.set(0.5, 1);
-  new GLTFLoader().load("assets/models/holds/jug.glb", ({ scene }) => {
+  gltfLoader.load("assets/models/holds/jug.glb", ({ scene }) => {
     scene.traverse((o) => {
       if (!o.isMesh) return;
       o.material = new THREE.MeshStandardMaterial({ map: atlas, roughness: 0.85 });
@@ -845,7 +848,7 @@ function openSideNormal(object) {
 
 function makePinch() {
   const g = new THREE.Group();
-  new GLTFLoader().load("assets/models/holds/pinch.glb", ({ scene }) => {
+  gltfLoader.load("assets/models/holds/pinch.glb", ({ scene }) => {
     scene.traverse((o) => { if (o.isMesh) o.castShadow = true; });
     // The scan has no real units: scale its longest side to ~15 cm.
     scene.updateMatrixWorld(true);
@@ -882,7 +885,7 @@ function loadProp(url, { scale, longest, rotation = [0, 0, 0] } = {}) {
     g.add(seat(scene));
   };
   if (url.endsWith(".fbx")) new FBXLoader().load(url, onLoad);
-  else new GLTFLoader().load(url, (gltf) => onLoad(gltf.scene));
+  else gltfLoader.load(url, (gltf) => onLoad(gltf.scene));
   return g;
 }
 
@@ -925,7 +928,7 @@ function makeHangLoop(bagZ) {
 function makeHangingBag(catchPoint, wallZ) {
   const g = new THREE.Group();
   g.position.copy(catchPoint);
-  new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).load("assets/models/props/climbing-bag.glb", ({ scene }) => {
+  gltfLoader.load("assets/models/props/climbing-bag.glb", ({ scene }) => {
     scene.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; } });
     scene.scale.setScalar(3); // metres -> screen units
     scene.rotation.y = -Math.PI/2; // thin side against the wall
@@ -964,15 +967,14 @@ function makeHangingBag(catchPoint, wallZ) {
 // Credits: "Halo weapons" by That one larry, CC BY 4.0
 // (https://sketchfab.com/3d-models/halo-weapons-2be4400560854b66bc4f99efa586b68e).
 // All model credits: CREDITS.md.
-// The file holds an energy sword too; only the hammer is kept.
+// The original file also held an energy sword; it was stripped from the asset.
 const HAMMER_URL = 'assets/models/halo/scene.gltf';
 const HAMMER_HEIGHT = 3.6; // screen units (≈ 1.2 m)
 
 /** Loads the hammer standing upright: handle along +y, bottom at y = 0, centred on x/z. */
 function makeHammer() {
   const g = new THREE.Group();
-  new GLTFLoader().load(HAMMER_URL, ({ scene }) => {
-    scene.getObjectByName('energy_sword_ARM_3')?.removeFromParent();
+  gltfLoader.load(HAMMER_URL, ({ scene }) => {
     scene.traverse((o) => {
       if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; o.frustumCulled = false; }
     });

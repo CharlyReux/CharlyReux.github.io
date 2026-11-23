@@ -30,6 +30,12 @@ const gl = new THREE.WebGLRenderer({ antialias: true, logarithmicDepthBuffer: tr
 gl.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // capped: full 2x/3x costs a lot of GPU
 gl.shadowMap.enabled = true;
 gl.shadowMap.type = THREE.PCFSoftShadowMap;
+// Nothing animated casts shadows, so the shadow map is only redrawn when
+// something changes: a model arrives, the layout changes, or a prop lifts.
+gl.shadowMap.autoUpdate = false;
+let shadowFrames = 2;
+const refreshShadows = (frames = 2) => { shadowFrames = Math.max(shadowFrames, frames); };
+THREE.DefaultLoadingManager.onProgress = () => refreshShadows();
 gl.outputColorSpace = THREE.SRGBColorSpace;
 document.getElementById('world').appendChild(gl.domElement);
 
@@ -163,6 +169,7 @@ function layout() {
   world.glow.distance = 3 * h;
 }
 window.addEventListener('resize', layout);
+window.addEventListener('resize', () => refreshShadows());
 layout();
 initPapers(); // after layout, so preview boxes have their size
 
@@ -568,7 +575,9 @@ function updateHover(dt) {
     setHovered(pickProp());
   }
   for (const p of props) {
-    p.t += ((p === hovered ? 1 : 0) - p.t) * Math.min(1, dt * 8);
+    const goal = p === hovered ? 1 : 0;
+    if (Math.abs(goal - p.t) < 1e-3) { if (p.t !== goal) { p.t = goal; refreshShadows(1); } }
+    else { p.t += (goal - p.t) * Math.min(1, dt * 8); refreshShadows(1); }
     p.inner.position.copy(p.liftAxis).multiplyScalar(p.lift * liftEase(p.t));
   }
   if (hovered) placeLabel(hovered);
@@ -592,12 +601,18 @@ gl.setAnimationLoop(() => {
   const dt = Math.min(clock.getDelta(), 0.05);
   updateCamera(dt);
   updateHover(dt);
-  world.tick(clock.elapsedTime, dt);
-  gl.render(scene, camera);
-  renderFocus();
+  // On the welcome page at rest, the page covers the whole viewport: skip the
+  // 3D room behind it (it resumes on the first frame of any camera move).
+  const firstFrame = !document.body.classList.contains('is-ready');
+  if (view !== 'main' || moving || firstFrame) {
+    world.tick(clock.elapsedTime, dt);
+    if (shadowFrames > 0) { gl.shadowMap.needsUpdate = true; shadowFrames--; }
+    gl.render(scene, camera);
+    renderFocus();
+  }
   css.render(scene, camera);
   // First frame is on screen: reveal the side screens (see style.css).
-  if (!document.body.classList.contains('is-ready')) document.body.classList.add('is-ready');
+  if (firstFrame) document.body.classList.add('is-ready');
 });
 
 // Debug hook: jump straight to a view from the console, e.g. __site.jump('left').
